@@ -5,6 +5,9 @@
 - [Лекция 1. Введение в высоконагруженные системы](lecture-01/L1.Introduction.pdf) (1 октября 2026)  
   Нагрузка, latency, throughput, RPS/QPS, concurrency, percentile-распределения, tail latency, SLA/SLO/SLI.
 
+- [Лекция 2. Очереди и пределы производительности](lecture-02/L2.Queues.pdf) (8 октября 2026)  
+  Закон Литтла, arrival/service rate, utilization, M/M/1, M/M/c, saturation, bursty traffic.
+
 ## Материалы семинаров, осень 2026.
 
 - [Семинар 1. Мониторинг высоконагруженных систем](seminar-01/README.md)  (2 октября 2026)
