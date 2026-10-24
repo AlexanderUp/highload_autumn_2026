@@ -1,0 +1,9 @@
+venv/
+**/.DS_Store
+**/*.env
+**/*.log
+**/*.pot
+**/*.pyc
+**/*.pid
+**/__pycache__/
+redis_config/users.acl
