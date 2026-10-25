@@ -2,13 +2,15 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from redis.asyncio import Redis
+from starlette.middleware.base import BaseHTTPMiddleware
 
-from api.v1 import health, items
+from api.v1 import health, items, metrics
 from core import redis
 from core.config import settings
 from core.logger import get_logger
+from middlewares.prometheus_middleware import MetricsMiddleware
 
-logger = get_logger(settings.project_name)
+logger = get_logger(settings.project.name)
 
 
 @asynccontextmanager
@@ -29,12 +31,14 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title=settings.project_name,
+    title=settings.project.name,
     docs_url="/api/openapi",
     openapi_url="/api/openapi.json",
     lifespan=lifespan,
 )
 
+app.add_middleware(BaseHTTPMiddleware, dispatch=MetricsMiddleware())
 
 app.include_router(health.router)
 app.include_router(items.router)
+app.include_router(metrics.router)

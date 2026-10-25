@@ -9,10 +9,10 @@ def get_logger(name: str = "app") -> logging.Logger:
     if logger.handlers:
         return logger
 
-    logger.setLevel(settings.log_level)
+    logger.setLevel(settings.project.log_level)
 
     stream_handler = logging.StreamHandler()
-    stream_handler.setLevel(settings.log_level)
+    stream_handler.setLevel(settings.project.log_level)
     stream_handler.setFormatter(
         logging.Formatter(
             fmt="%(asctime)s [%(levelname)s] %(name)s: %(message)s",

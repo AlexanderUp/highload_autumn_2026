@@ -1,0 +1,2 @@
+basic_auth_users:
+    admin: bcrypt_hashed_password

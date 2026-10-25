@@ -12,10 +12,10 @@ from repositories.item_repository import (
 from services.item_service import ItemService
 
 logger = get_logger(__name__)
-router = APIRouter(prefix="/api/v1", tags=["cities"])
+router = APIRouter(prefix="/api/v1", tags=["items"])
 
 
-@router.post("/items")
+@router.post("/items", name="items_create")
 async def create_item(
     item_data: Item, item_service: ItemService = Depends(get_item_service)
 ) -> ItemDB:
@@ -29,7 +29,7 @@ async def create_item(
         )
 
 
-@router.get("/items/{item_id}")
+@router.get("/items/{item_id}", name="items_get_by_id")
 async def get_item(
     item_id: uuid.UUID, item_service: ItemService = Depends(get_item_service)
 ) -> ItemDB:
@@ -41,7 +41,7 @@ async def get_item(
     return item
 
 
-@router.put("/items/{item_id}")
+@router.put("/items/{item_id}", name="items_update_by_id")
 async def update_item(
     item_id: uuid.UUID,
     item_data: Item,

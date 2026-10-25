@@ -7,7 +7,7 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-      - ./redis_config/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./infra/redis_config/redis.conf:/usr/local/etc/redis/redis.conf
     secrets:
       - redis_users_acl
     healthcheck:
@@ -19,12 +19,39 @@ services:
       - backend_network
     command: redis-server /usr/local/etc/redis/redis.conf
 
+  prometheus:
+    image: prom/prometheus:v3.15.1
+    container_name: prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/prometheus_config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    secrets:
+      - prometheus_users
+    networks:
+      - monitoring_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # for host access -- when fastapi run in venv on host
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=200h"
+      - "--web.enable-lifecycle"
+      - "--web.config.file=/run/secrets/prometheus_users"
+
 volumes:
   redis_data: null
+  prometheus_data: null
 
 secrets:
   redis_users_acl:
-    file: ./redis_config/users.acl
+    file: ./infra/redis_config/users.acl
+
+  prometheus_users:
+    file: ./infra/prometheus_config/prometheus_users.yml
 
 networks:
   backend_network: null
+  monitoring_network: null
