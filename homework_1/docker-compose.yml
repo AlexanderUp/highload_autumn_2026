@@ -11,7 +11,7 @@ services:
     secrets:
       - redis_users_acl
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli --user health_checker ping"]
+      test: ["CMD", "redis-cli", "--user", "health_checker", "ping"]
       interval: 30s
       timeout: 10s
       retries: 15
@@ -25,6 +25,8 @@ services:
     restart: always
     ports:
       - "9090:9090"
+    env_file:
+      - prometheus_credentials.env
     volumes:
       - ./infra/prometheus_config/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
@@ -38,12 +40,38 @@ services:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
       - "--storage.tsdb.retention.time=200h"
-      - "--web.enable-lifecycle"
       - "--web.config.file=/run/secrets/prometheus_users"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider http://$$PROMETHEUS_USER_NAME:$$PROMETHEUS_USER_PASSWORD@127.0.0.1:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 15
+
+  grafana:
+    image: grafana/grafana:13.0
+    container_name: grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - prometheus_credentials.env
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/grafana_config/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring_network
+    healthcheck:
+      test: ["CMD", "curl", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 15
 
 volumes:
   redis_data: null
   prometheus_data: null
+  grafana_data: null
 
 secrets:
   redis_users_acl:

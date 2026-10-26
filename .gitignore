@@ -5,6 +5,6 @@ prometheus_client_data/
 
 .DS_Store
 
-.env
+*.env
 users.acl
 prometheus_users.yml

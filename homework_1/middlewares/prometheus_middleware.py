@@ -1,7 +1,6 @@
 import time
 
 from fastapi import Request
-from starlette.routing import Match
 
 from core.config import settings
 from core.prometheus_metrics import (
@@ -11,13 +10,23 @@ from core.prometheus_metrics import (
     http_requests_total,
 )
 
-EXCLUDED_ENDPOINTS_NAMES: list[str] = ["metrics_endpoint", "health_endpoint"]
+# reason: docs url mounted with Mount, not APIRouter
+# this list is rarely changes
+PROMETHEUS_EXCLUDED_ENDPOINTS_URLS: list[str] = [
+    "/openapi.json",
+    "/docs",
+    "/redoc",
+    "/docs/oauth2-redirect",
+    "/health",
+    "/metrics",
+    "/handlers",
+]
 
 
 class MetricsMiddleware:
 
-    def __init__(self, excluded: list[str] | None = None):
-        self.excluded: list[str] = excluded or EXCLUDED_ENDPOINTS_NAMES
+    def __init__(self):
+        self.excluded_urls: list[str] = PROMETHEUS_EXCLUDED_ENDPOINTS_URLS
 
     async def __call__(self, request: Request, call_next):
         start_time = time.time()
@@ -34,7 +43,7 @@ class MetricsMiddleware:
             path = request.scope["path"]
             name = "unknown"
 
-        if name in self.excluded:
+        if path in self.excluded_urls:
             return response
 
         http_requests_total.labels(

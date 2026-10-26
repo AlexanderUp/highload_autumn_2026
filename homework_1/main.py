@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from redis.asyncio import Redis
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from api.v1 import health, items, metrics
+from api.v1 import handlers, health, items, metrics
 from core import redis
 from core.config import settings
 from core.logger import get_logger
@@ -32,13 +32,13 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.project.name,
-    docs_url="/api/openapi",
-    openapi_url="/api/openapi.json",
     lifespan=lifespan,
 )
 
 app.add_middleware(BaseHTTPMiddleware, dispatch=MetricsMiddleware())
 
 app.include_router(health.router)
-app.include_router(items.router)
 app.include_router(metrics.router)
+app.include_router(handlers.router)
+
+app.include_router(items.router)
