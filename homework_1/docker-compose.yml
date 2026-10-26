@@ -41,6 +41,7 @@ services:
       - "--storage.tsdb.path=/prometheus"
       - "--storage.tsdb.retention.time=200h"
       - "--web.config.file=/run/secrets/prometheus_users"
+      - "--web.enable-admin-api"
     healthcheck:
       test: ["CMD-SHELL", "wget --spider http://$$PROMETHEUS_USER_NAME:$$PROMETHEUS_USER_PASSWORD@127.0.0.1:9090/-/healthy"]
       interval: 30s
