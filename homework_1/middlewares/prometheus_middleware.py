@@ -38,10 +38,8 @@ class MetricsMiddleware:
 
         if route:
             path = route.path
-            name = route.name
         else:
-            path = request.scope["path"]
-            name = "unknown"
+            return response
 
         if path in self.excluded_urls:
             return response
@@ -51,7 +49,6 @@ class MetricsMiddleware:
             datacenter=settings.datacenter,
             method=request.method,
             endpoint=path,
-            name=name,
             status_code=str(response.status_code),
         ).inc()
 
@@ -60,7 +57,6 @@ class MetricsMiddleware:
             datacenter=settings.datacenter,
             method=request.method,
             endpoint=path,
-            name=name,
         ).observe(duration)
 
         status_code = response.status_code
@@ -70,7 +66,6 @@ class MetricsMiddleware:
                 pod_id=settings.pod_id,
                 datacenter=settings.datacenter,
                 endpoint=path,
-                name=name,
                 status_code=str(status_code),
             ).inc()
         elif status_code >= 500:
@@ -78,7 +73,6 @@ class MetricsMiddleware:
                 pod_id=settings.pod_id,
                 datacenter=settings.datacenter,
                 endpoint=path,
-                name=name,
                 status_code=str(status_code),
             ).inc()
 
