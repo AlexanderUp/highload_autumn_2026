@@ -19,14 +19,14 @@ GRAFANA_UID = "highload-service-dashboard"
 def build_rps_panel(endpoint_name: str) -> Timeseries:
     prom_qs_fragments = [
         "sum(rate(http_requests_total{",
-        f"endpoint='{endpoint_name}', datacenter=~'$datacenter'",
-        "}[$__rate_interval])) by (datacenter, method, status_code)",
+        f"endpoint='{endpoint_name}', datacenter=~'$datacenter', pod_id=~'$pod_id'",
+        "}[$__rate_interval])) by (datacenter, pod_id, method, status_code)",
     ]
     rps_query = (
         PrometheusQuery()
         .expr("".join(prom_qs_fragments))
         .legend_format(
-            "{{datacenter}} - {{endpoint}} {{method}} {{status_code}}"
+            "{{datacenter}} {{pod_id}} - {{endpoint}} {{method}} {{status_code}}"
         )
     )
     return (
@@ -44,34 +44,40 @@ def build_rps_panel(endpoint_name: str) -> Timeseries:
 def build_histogram_panel(endpoint_name: str) -> Timeseries:
     prom_qs_fragments_50 = [
         "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{",
-        f"endpoint='{endpoint_name}', datacenter=~'$datacenter'",
-        "}[$__rate_interval])) by (le, datacenter, method))",
+        f"endpoint='{endpoint_name}', datacenter=~'$datacenter', pod_id=~'$pod_id'",
+        "}[$__rate_interval])) by (le, datacenter, pod_id, method))",
     ]
     prom_qs_fragments_95 = [
         "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{",
-        f"endpoint='{endpoint_name}', datacenter=~'$datacenter'",
-        "}[$__rate_interval])) by (le, datacenter, method))",
+        f"endpoint='{endpoint_name}', datacenter=~'$datacenter', pod_id=~'$pod_id'",
+        "}[$__rate_interval])) by (le, datacenter, pod_id, method))",
     ]
     prom_qs_fragments_99 = [
         "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{",
-        f"endpoint='{endpoint_name}', datacenter=~'$datacenter'",
-        "}[$__rate_interval])) by (le, datacenter, method))",
+        f"endpoint='{endpoint_name}', datacenter=~'$datacenter', pod_id=~'$pod_id'",
+        "}[$__rate_interval])) by (le, datacenter, pod_id, method))",
     ]
 
     histo50_query = (
         PrometheusQuery()
         .expr("".join(prom_qs_fragments_50))
-        .legend_format("p50 - {{datacenter}} {{endpoint}} {{method}}")
+        .legend_format(
+            "p50 - {{datacenter}} {{pod_id}} {{endpoint}} {{method}}"
+        )
     )
     histo95_query = (
         PrometheusQuery()
         .expr("".join(prom_qs_fragments_95))
-        .legend_format("p95 - {{datacenter}} {{endpoint}} {{method}}")
+        .legend_format(
+            "p95 - {{datacenter}} {{pod_id}} {{endpoint}} {{method}}"
+        )
     )
     histo99_query = (
         PrometheusQuery()
         .expr("".join(prom_qs_fragments_99))
-        .legend_format("p99 - {{datacenter}} {{endpoint}} {{method}}")
+        .legend_format(
+            "p99 - {{datacenter}} {{pod_id}} {{endpoint}} {{method}}"
+        )
     )
     return (
         Timeseries()
@@ -90,26 +96,30 @@ def build_histogram_panel(endpoint_name: str) -> Timeseries:
 def build_error_panel(endpoint_name: str) -> Timeseries:
     prom_qs_fragments_4xx = [
         "sum(rate(http_errors_4xx_total{",
-        f"endpoint='{endpoint_name}', datacenter=~'$datacenter'",
-        "}[$__rate_interval])) by (datacenter, method)",
+        f"endpoint='{endpoint_name}', datacenter=~'$datacenter', pod_id=~'$pod_id'",
+        "}[$__rate_interval])) by (datacenter, pod_id, method)",
     ]
     prom_qs_fragments_5xx = [
         "sum(rate(http_errors_5xx_total{",
-        f"endpoint='{endpoint_name}', datacenter=~'$datacenter'",
-        "}[$__rate_interval])) by (datacenter, method)",
+        f"endpoint='{endpoint_name}', datacenter=~'$datacenter', pod_id=~'$pod_id'",
+        "}[$__rate_interval])) by (datacenter, pod_id, method)",
     ]
 
     query_4xx = (
         PrometheusQuery()
         .ref_id("A")
         .expr("".join(prom_qs_fragments_4xx))
-        .legend_format("4xx - {{datacenter}} {{endpoint}} {{method}}")
+        .legend_format(
+            "4xx - {{datacenter}} {{pod_id}} {{endpoint}} {{method}}"
+        )
     )
     query_5xx = (
         PrometheusQuery()
         .ref_id("B")
         .expr("".join(prom_qs_fragments_5xx))
-        .legend_format("5xx - {{datacenter}} {{endpoint}} {{method}}")
+        .legend_format(
+            "5xx - {{datacenter}} {{pod_id}} {{endpoint}} {{method}}"
+        )
     )
     return (
         Timeseries()
@@ -148,6 +158,31 @@ def generate_dashboard(endpoint_list: list[str]):
         )
         .all_value(".*")
     )
+    pod_variable = (
+        QueryVariable("pod_id")
+        .label("Pod_ID")
+        .datasource({"type": "Prometheus", "uid": "prometheus_datasource_v1"})
+        .query(
+            {
+                "qryType": 1,
+                "query": "label_values({job='webapp', datacenter=~'$datacenter'}, pod_id)",
+                "refId": "PrometheusVariableQueryEditor-VariableQuery",
+            }
+        )
+        .definition(
+            "label_values({job='webapp', datacenter=~'$datacenter'}, pod_id)"
+        )
+        .refresh(1)
+        .sort(1)
+        .multi(True)
+        .include_all(True)
+        .current(
+            model_dashboard.VariableOption(
+                selected=True, text="All", value="$__all"
+            )
+        )
+        .all_value(".*")
+    )
 
     dashboard = (
         Dashboard("Highload service dashboard")
@@ -157,6 +192,7 @@ def generate_dashboard(endpoint_list: list[str]):
         .time("now-1h", "now")
         .timezone(TimeZoneBrowser)
         .with_variable(datacenter_variable)
+        .with_variable(pod_variable)
     )
 
     for endpoint in endpoint_list:
