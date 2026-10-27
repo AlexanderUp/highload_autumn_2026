@@ -34,14 +34,9 @@ class GrafanaDashboardAPI:
         self.delete_dash_board(grafana_uid)
 
         url = f"http://{self.grafana_host}:3000/apis/dashboard.grafana.app/v1/namespaces/default/dashboards"
-        payload = {
-            "metadata": {
-                "name": grafana_uid,
-            },
-            "spec": json.loads(dashboard_json),
-            "overwrite": True,
-        }
-        return requests.post(url, headers=self._headers, json=payload)
+        return requests.post(
+            url, headers=self._headers, json=json.loads(dashboard_json)
+        )
 
     def delete_dash_board(
         self, grafana_uid: str = GRAFANA_UID
