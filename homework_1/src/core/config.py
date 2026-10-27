@@ -17,7 +17,7 @@ class AppSettings(BaseSettings):
     project: ProjectSettings = ProjectSettings()
     redis: RedisSettings = RedisSettings()
 
-    pod_id: int = Field(..., alias="POD_ID")
+    pod_id: str = Field(..., alias="POD_ID")
     datacenter: str = Field(..., alias="DATACENTER")
 
 
