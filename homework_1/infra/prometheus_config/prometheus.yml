@@ -4,6 +4,6 @@ global:
 scrape_configs:
   - job_name: "webapp"
     static_configs:
-      - targets: ["host.docker.internal:8000"]  # TODO: change before dockerizing
+      - targets: ["app:8000"]
     scrape_interval: 5s
     metrics_path: /metrics

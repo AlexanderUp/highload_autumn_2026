@@ -1,10 +1,32 @@
 services:
+  app:
+    container_name: app
+    restart: always
+    build:
+      context: .
+    image: highload-system-app
+    pull_policy: never
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 15
+    networks:
+      - backend_network
+      - monitoring_network
+
   redis:
     image: redis:8.10.2-alpine
     container_name: redis_db
     restart: always
-    ports:
-      - "6379:6379"
+    expose:
+      - "6379"
     volumes:
       - redis_data:/data
       - ./infra/redis_config/redis.conf:/usr/local/etc/redis/redis.conf
@@ -34,8 +56,8 @@ services:
       - prometheus_users
     networks:
       - monitoring_network
-    extra_hosts:
-      - "host.docker.internal:host-gateway"  # for host access -- when fastapi run in venv on host
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"  # for host access -- when fastapi run in venv on host
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
