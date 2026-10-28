@@ -8,6 +8,7 @@ from api.v1 import handlers, health, items, metrics
 from core import redis
 from core.config import settings
 from core.logger import get_logger
+from middlewares.disorder_middleware import DisorderMiddleware
 from middlewares.prometheus_middleware import MetricsMiddleware
 
 logger = get_logger(settings.project.name)
@@ -21,7 +22,9 @@ async def lifespan(app: FastAPI):
         port=settings.redis.port,
         password=settings.redis.password,
     )
-    logger.info("Service started.")
+    logger.info(
+        f"Service started with DISORDER={settings.project.error_mode}."
+    )
 
     yield
 
@@ -36,6 +39,12 @@ app = FastAPI(
 )
 
 app.add_middleware(BaseHTTPMiddleware, dispatch=MetricsMiddleware())
+
+if settings.project.error_mode:
+    app.add_middleware(
+        BaseHTTPMiddleware,
+        dispatch=DisorderMiddleware(error_rate=settings.project.error_rate),
+    )
 
 app.include_router(health.router)
 app.include_router(metrics.router)

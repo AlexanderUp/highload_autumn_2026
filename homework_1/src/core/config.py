@@ -5,6 +5,8 @@ from pydantic_settings import BaseSettings
 class ProjectSettings(BaseSettings):
     name: str = "Highload monitored service"
     log_level: str = Field(..., alias="LOG_LEVEL")
+    error_mode: bool = Field(..., alias="ERROR_MODE")
+    error_rate: float = Field(..., alias="ERROR_RATE")
 
 
 class RedisSettings(BaseSettings):

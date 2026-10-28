@@ -9,18 +9,7 @@ from core.prometheus_metrics import (
     http_request_duration_seconds,
     http_requests_total,
 )
-
-# reason: docs url mounted with Mount, not APIRouter
-# this list is rarely changes
-PROMETHEUS_EXCLUDED_ENDPOINTS_URLS: list[str] = [
-    "/openapi.json",
-    "/docs",
-    "/redoc",
-    "/docs/oauth2-redirect",
-    "/health",
-    "/metrics",
-    "/handlers",
-]
+from middlewares.excluded_urls import PROMETHEUS_EXCLUDED_ENDPOINTS_URLS
 
 
 class MetricsMiddleware:
@@ -65,6 +54,7 @@ class MetricsMiddleware:
             http_errors_4xx_total.labels(
                 pod_id=settings.pod_id,
                 datacenter=settings.datacenter,
+                method=request.method,
                 endpoint=path,
                 status_code=str(status_code),
             ).inc()
@@ -72,6 +62,7 @@ class MetricsMiddleware:
             http_errors_5xx_total.labels(
                 pod_id=settings.pod_id,
                 datacenter=settings.datacenter,
+                method=request.method,
                 endpoint=path,
                 status_code=str(status_code),
             ).inc()

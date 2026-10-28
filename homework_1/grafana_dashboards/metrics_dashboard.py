@@ -20,20 +20,18 @@ def build_rps_panel(endpoint_name: str) -> Timeseries:
     prom_qs_fragments = [
         "sum(rate(http_requests_total{",
         f"endpoint='{endpoint_name}', datacenter=~'$datacenter', pod_id=~'$pod_id'",
-        "}[$__rate_interval])) by (datacenter, pod_id, method, status_code)",
+        "}[$__rate_interval])) by (datacenter, pod_id, method)",
     ]
     rps_query = (
         PrometheusQuery()
         .expr("".join(prom_qs_fragments))
-        .legend_format(
-            "{{datacenter}} {{pod_id}} - {{endpoint}} {{method}} {{status_code}}"
-        )
+        .legend_format("{{datacenter}} {{pod_id}} - {{method}}")
     )
     return (
         Timeseries()
-        .title(f"HTTP Requests Rate {endpoint_name}")
+        .title(f"HTTP Requests Rate '{endpoint_name}'")
         .description(
-            f"Number of total HTTP requests per second for endpoint {endpoint_name}"
+            f"Number of total HTTP requests per second for endpoint '{endpoint_name}'"
         )
         .unit(units.RequestsPerSecond)
         .datasource({"type": "prometheus", "uid": "prometheus_datasource_v1"})
@@ -61,29 +59,23 @@ def build_histogram_panel(endpoint_name: str) -> Timeseries:
     histo50_query = (
         PrometheusQuery()
         .expr("".join(prom_qs_fragments_50))
-        .legend_format(
-            "p50 - {{datacenter}} {{pod_id}} {{endpoint}} {{method}}"
-        )
+        .legend_format("p50 - {{datacenter}} {{pod_id}} {{method}}")
     )
     histo95_query = (
         PrometheusQuery()
         .expr("".join(prom_qs_fragments_95))
-        .legend_format(
-            "p95 - {{datacenter}} {{pod_id}} {{endpoint}} {{method}}"
-        )
+        .legend_format("p95 - {{datacenter}} {{pod_id}} {{method}}")
     )
     histo99_query = (
         PrometheusQuery()
         .expr("".join(prom_qs_fragments_99))
-        .legend_format(
-            "p99 - {{datacenter}} {{pod_id}} {{endpoint}} {{method}}"
-        )
+        .legend_format("p99 - {{datacenter}} {{pod_id}} {{method}}")
     )
     return (
         Timeseries()
-        .title(f"Latency {endpoint_name}")
+        .title(f"Latency '{endpoint_name}'")
         .description(
-            f"50th, 95th and 99th percentiles of request duration over $__rate_interval window {endpoint_name}"
+            f"50th, 95th and 99th percentiles of request duration over '{endpoint_name}'"
         )
         .unit(units.Seconds)
         .datasource({"type": "prometheus", "uid": "prometheus_datasource_v1"})
@@ -97,12 +89,12 @@ def build_error_panel(endpoint_name: str) -> Timeseries:
     prom_qs_fragments_4xx = [
         "sum(rate(http_errors_4xx_total{",
         f"endpoint='{endpoint_name}', datacenter=~'$datacenter', pod_id=~'$pod_id'",
-        "}[$__rate_interval])) by (datacenter, pod_id, method)",
+        "}[$__rate_interval])) by (datacenter, pod_id, method, status_code)",
     ]
     prom_qs_fragments_5xx = [
         "sum(rate(http_errors_5xx_total{",
         f"endpoint='{endpoint_name}', datacenter=~'$datacenter', pod_id=~'$pod_id'",
-        "}[$__rate_interval])) by (datacenter, pod_id, method)",
+        "}[$__rate_interval])) by (datacenter, pod_id, method, status_code)",
     ]
 
     query_4xx = (
@@ -110,7 +102,7 @@ def build_error_panel(endpoint_name: str) -> Timeseries:
         .ref_id("A")
         .expr("".join(prom_qs_fragments_4xx))
         .legend_format(
-            "4xx - {{datacenter}} {{pod_id}} {{endpoint}} {{method}}"
+            "4xx - {{datacenter}} {{pod_id}} {{method}} {{status_code}}"
         )
     )
     query_5xx = (
@@ -118,14 +110,14 @@ def build_error_panel(endpoint_name: str) -> Timeseries:
         .ref_id("B")
         .expr("".join(prom_qs_fragments_5xx))
         .legend_format(
-            "5xx - {{datacenter}} {{pod_id}} {{endpoint}} {{method}}"
+            "5xx - {{datacenter}} {{pod_id}} {{method}} {{status_code}}"
         )
     )
     return (
         Timeseries()
-        .title(f"HTTP Error Rates (4xx vs 5xx) {endpoint_name}")
+        .title(f"HTTP Error Rates (4xx vs 5xx) '{endpoint_name}'")
         .description(
-            f"Rate of 4xx and 5xx client/server errors per second averaged over $__rate_interval {endpoint_name}"
+            f"Rate of 4xx and 5xx server errors per second over '{endpoint_name}'"
         )
         .unit(units.RequestsPerSecond)
         .datasource({"type": "prometheus", "uid": "prometheus_datasource_v1"})

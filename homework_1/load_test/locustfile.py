@@ -11,6 +11,7 @@ class QuickstartUser(HttpUser):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.error_threshold: float = 0.001
         self.created_item_ids: list[str] = []  # for GET/PUT requests
 
     def _create_payload(self) -> str:
@@ -28,7 +29,7 @@ class QuickstartUser(HttpUser):
 
     @task(10)
     def create_item(self):
-        if random.random() < 0.1:
+        if random.random() < self.error_threshold:
             payload = {"value": 42}  # will not pass validation, str required
         else:
             payload = {"value": self._create_payload()}
@@ -43,7 +44,7 @@ class QuickstartUser(HttpUser):
 
     @task(10)
     def update_item(self):
-        if random.random() < 0.1:
+        if random.random() < self.error_threshold:
             payload = {"value": 142}  # will not pass validation, str required
         else:
             payload = {"value": self._create_payload()}

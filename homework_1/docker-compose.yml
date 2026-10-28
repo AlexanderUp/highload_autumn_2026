@@ -83,8 +83,6 @@ services:
       - prometheus_users
     networks:
       - monitoring_network
-    # extra_hosts:
-    #   - "host.docker.internal:host-gateway"  # for host access -- when fastapi run in venv on host
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
@@ -105,6 +103,7 @@ services:
       - "3000:3000"
     env_file:
       - prometheus_credentials.env
+      - grafana_credentials.env
     volumes:
       - grafana_data:/var/lib/grafana
       - ./infra/grafana_config/provisioning:/etc/grafana/provisioning

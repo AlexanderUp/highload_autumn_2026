@@ -12,6 +12,6 @@ datasources:
     isDefault: true
     editable: false
     basicAuth: true
-    basicAuthUser: admin
+    basicAuthUser: $PROMETHEUS_USER_NAME
     secureJsonData:
       basicAuthPassword: $PROMETHEUS_USER_PASSWORD
