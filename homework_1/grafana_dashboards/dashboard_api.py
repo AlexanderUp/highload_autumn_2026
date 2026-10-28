@@ -3,14 +3,13 @@ import logging
 import os
 
 import requests
-from metrics_dashboard import GRAFANA_UID, generate_dashboard
+
+from metrics_dashboard import generate_dashboard
 
 logging.basicConfig(
     level=logging.INFO, format="[%(asctime)s] - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
-
-# TODO: add retries and exception handling
 
 
 def get_handlers_list(app_host: str) -> list[str]:
@@ -27,26 +26,16 @@ class GrafanaDashboardAPI:
         grafana_admin_password,
     ) -> None:
         self.base_url_with_creds = f"http://{grafana_admin_name}:{grafana_admin_password}@{grafana_host}:{grafana_port}"
+        self.dashboard_url = "/api/dashboards/db"
         self._headers: dict[str] = {
             "Accept": "application/json",
             "Content-Type": "application/json",
         }
 
-    def create_dashboard(
-        self, dashboard_json: str, grafana_uid: str = GRAFANA_UID
-    ) -> requests.Response:
-        self.delete_dash_board(grafana_uid)
-
-        url = f"{self.base_url_with_creds}/apis/dashboard.grafana.app/v1/namespaces/default/dashboards"
-        return requests.post(
-            url, headers=self._headers, json=json.loads(dashboard_json)
-        )
-
-    def delete_dash_board(
-        self, grafana_uid: str = GRAFANA_UID
-    ) -> requests.Response:
-        url = f"{self.base_url_with_creds}/apis/dashboard.grafana.app/v1/namespaces/default/dashboards/{grafana_uid}"
-        return requests.delete(url, headers=self._headers)
+    def create_dashboard(self, dashboard_json: str) -> requests.Response:
+        url = f"{self.base_url_with_creds}{self.dashboard_url}"
+        payload = {"dashboard": json.loads(dashboard_json), "overwrite": True}
+        return requests.post(url, headers=self._headers, json=payload)
 
 
 if __name__ == "__main__":

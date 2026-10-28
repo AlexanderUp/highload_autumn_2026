@@ -45,6 +45,8 @@ services:
       - app_2
     volumes:
       - ./infra/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://127.0.0.1/nginx_health"]
     networks:
       - backend_network
 
@@ -90,7 +92,7 @@ services:
       - "--web.config.file=/run/secrets/prometheus_users"
       - "--web.enable-admin-api"
     healthcheck:
-      test: ["CMD-SHELL", "wget --spider http://$$PROMETHEUS_USER_NAME:$$PROMETHEUS_USER_PASSWORD@127.0.0.1:9090/-/healthy"]
+      test: ["CMD-SHELL", "wget", "--spider", "http://$$PROMETHEUS_USER_NAME:$$PROMETHEUS_USER_PASSWORD@127.0.0.1:9090/-/healthy"]
       interval: 30s
       timeout: 10s
       retries: 15
@@ -106,7 +108,7 @@ services:
       - grafana_credentials.env
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./infra/grafana_config/provisioning:/etc/grafana/provisioning
+      - ./infra/grafana_config/provisioning:/etc/grafana/provisioning:ro
     depends_on:
       - prometheus
     networks:
@@ -117,6 +119,23 @@ services:
       timeout: 10s
       retries: 15
 
+  dashboard_generator:
+    build:
+      context: ./grafana_dashboards
+    image: highload-system-dashboard-generator
+    pull_policy: never
+    container_name: dashboard_generator
+    restart: on-failure
+    env_file:
+      - grafana_credentials.env
+      - ./grafana_dashboards/dashboard.env
+    depends_on:
+      - nginx
+      - grafana
+    networks:
+      - backend_network
+      - monitoring_network
+
   locust_master:
     image: locustio/locust:2.47.0
     ports:
@@ -125,7 +144,10 @@ services:
       - ./load_test/:/mnt/locust
     command: -f /mnt/locust/locustfile.py --master -H http://locust_master:8089 --autostart -r 25 -t 100m -u 500
     depends_on:
-      - nginx
+      nginx:
+        condition: service_healthy
+      dashboard_generator:
+        condition: service_completed_successfully
     networks:
       - backend_network
 
@@ -134,7 +156,10 @@ services:
     volumes:
       - ./load_test/:/mnt/locust
     depends_on:
-      - nginx
+      nginx:
+        condition: service_healthy
+      dashboard_generator:
+        condition: service_completed_successfully
     command: -f /mnt/locust/locustfile.py --worker --master-host locust_master --process 2
     networks:
       - backend_network
