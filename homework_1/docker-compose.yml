@@ -118,6 +118,28 @@ services:
       timeout: 10s
       retries: 15
 
+  locust_master:
+    image: locustio/locust:2.47.0
+    ports:
+     - "8089:8089"
+    volumes:
+      - ./load_test/:/mnt/locust
+    command: -f /mnt/locust/locustfile.py --master -H http://locust_master:8089 --autostart -r 25 -t 100m -u 500
+    depends_on:
+      - nginx
+    networks:
+      - backend_network
+
+  locust_worker:
+    image: locustio/locust:2.47.0
+    volumes:
+      - ./load_test/:/mnt/locust
+    depends_on:
+      - nginx
+    command: -f /mnt/locust/locustfile.py --worker --master-host locust_master --process 2
+    networks:
+      - backend_network
+
 volumes:
   redis_data: null
   prometheus_data: null
