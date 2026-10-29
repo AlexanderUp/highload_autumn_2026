@@ -180,6 +180,7 @@ def generate_dashboard(endpoint_list: list[str]):
         Dashboard("Highload service dashboard")
         .id(None)
         .uid(GRAFANA_UID)
+        .readonly()
         .refresh("10s")
         .time("now-1h", "now")
         .timezone(TimeZoneBrowser)

@@ -55,9 +55,7 @@ class QuickstartUser(HttpUser):
     @task
     def create_item_404(self):
         payload = {"value": self._create_payload()}
-        response = self.client.post(
-            f"{self.target_url}/route/not/found", json=payload
-        )
+        response = self.client.post("http://nginx/api/v2/items", json=payload)
         self._process_post_response(response)
 
     @task

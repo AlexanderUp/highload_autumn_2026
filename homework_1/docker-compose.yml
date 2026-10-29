@@ -41,14 +41,17 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - app_1
-      - app_2
+      app_1:
+        condition: service_healthy
+      app_2:
+        condition: service_healthy
     volumes:
       - ./infra/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://127.0.0.1/nginx_health"]
     networks:
       - backend_network
+      - load_network
 
   redis:
     image: redis:8.10.2-alpine
@@ -128,7 +131,11 @@ services:
     restart: on-failure
     env_file:
       - grafana_credentials.env
-      - ./grafana_dashboards/dashboard.env
+    environment:
+      APP_HOST: nginx
+      APP_PORT: 80
+      GF_HOST: grafana
+      GF_PORT: 3000
     depends_on:
       - nginx
       - grafana
@@ -149,7 +156,7 @@ services:
       dashboard_generator:
         condition: service_completed_successfully
     networks:
-      - backend_network
+      - load_network
 
   locust_worker:
     image: locustio/locust:2.47.0
@@ -162,7 +169,7 @@ services:
         condition: service_completed_successfully
     command: -f /mnt/locust/locustfile.py --worker --master-host locust_master --process 2
     networks:
-      - backend_network
+      - load_network
 
 volumes:
   redis_data: null
@@ -179,3 +186,4 @@ secrets:
 networks:
   backend_network: null
   monitoring_network: null
+  load_network: null
